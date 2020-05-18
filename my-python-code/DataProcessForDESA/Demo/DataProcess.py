@@ -9,7 +9,10 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill
 import re
 
+import time
+
 import datetime
+
 starttime = datetime.datetime.now()
 
 doc = """
@@ -26,19 +29,18 @@ doc = """
 """
 print(doc)
 
-
 # source/destinat
 source = "source.xlsx"
 destinat = "destination.xlsx"
 
-print("Get data source successfully---"+source)
+print("Get data source successfully---" + source)
 
 # 功能一:读取制定的工作簿
 # --------------------------------------------------------------------------------
 
 # 获取数据源
 # step1 获取源工作簿的工作表  ,  data_only=True 可以忽略公式,直接提取值
-wb = openpyxl.load_workbook(source,data_only=True)
+wb = openpyxl.load_workbook(source, data_only=True)
 # 获取Sheet表格
 ws = wb.worksheets[0]
 
@@ -51,7 +53,7 @@ nwb.create_sheet("ESN_repeat")
 
 ws_max_row = ws.max_row
 ws_max_col = ws.max_column
-print(str(ws_max_row)+" records "+ str(ws_max_col) + " columns will be processed for you this time")
+print(str(ws_max_row) + " records " + str(ws_max_col) + " columns will be processed for you this time")
 
 # 功能二:筛选数据
 # (筛选“Inventory Org. ”  的值为 'BUS', 'CNS', 'CON', 'DOM', 'EXP', 'OHW','ACCRUAL','DBU' 的记录)
@@ -65,7 +67,7 @@ for r in ls_table2:
     nws.append(r)
 nwb.save(destinat)
 
-print("Target created successfully---"+destinat)
+print("Target created successfully---" + destinat)
 
 # 功能三:Customer Type - by No. 补位处理
 # --------------------------------------------------------------------------------
@@ -116,6 +118,9 @@ list_Invoice_Number_pre3 = [str(col.value)[0:3] for col in ws_new['Q:Q']]
 nrows = ws_new.max_column
 # 写表头
 ws_new.cell(1, nrows + 1, 'RC')
+# Invoice_Date/Invoice_GL_Date时间格式化 time.strptime
+ts_Invoice_Date = ""
+ts_Invoice_GL_Date = ""
 
 # 首行是标题行跳过不处理
 r = 2
@@ -167,17 +172,18 @@ while r <= ws_new.max_row:
 
     # GM% 列的处理，数据源是计算列公式结果是  10% 按照去公式处理 读取到 0.1 需要*100
     GM = ws_new.cell(r, 44).value * 100
-    ws_new.cell(r,44,str(GM)+"%")
+    ws_new.cell(r, 44, str(GM) + "%")
+
+    ts_Invoice_Date = time.strptime(str(ws_new.cell(r, 18).value), "%Y-%m-%d %H:%M:%S")
+    ts_Invoice_GL_Date = time.strptime(str(ws_new.cell(r, 19).value), "%Y-%m-%d %H:%M:%S")
+
+    # Invoice Date/Invoice GL Date 日期格式化 YY/m/d
+    ws_new.cell(r, 18,
+                str(ts_Invoice_Date.tm_year) + "/" + str(ts_Invoice_Date.tm_mon) + "/" + str(ts_Invoice_Date.tm_mday))
+    ws_new.cell(r, 19, str(ts_Invoice_GL_Date.tm_year) + "/" + str(ts_Invoice_GL_Date.tm_mon) + "/" + str(
+        ts_Invoice_GL_Date.tm_mday))
 
     r += 1
-
-# 功能七:前缀202的替换法则待确定
-# --------------------------------------------------------------------------------
-
-
-# 功能十:退货流程
-# --------------------------------------------------------------------------------
-
 
 # 功能十二:新增列"Team"列，功能待讨论
 # --------------------------------------------------------------------------------
@@ -206,25 +212,52 @@ while r_ESN < ws_new.max_row:
 # ESN重复记录
 list_ESN_repeat = [t for t in ws_new.values if t[34] in set_ESN_repeat]
 
-
 # 写入到ws_new_esn表中
 ws_new_esn = wb_new.worksheets[1]
 for r in list_ESN_repeat:
     ws_new_esn.append(r)
 
+# 功能十:退货流程
+# --------------------------------------------------------------------------------
+# 定义map dict_esn_so_number 存放 [ ESN:[SONumber,SONumber[-4:]] ]
+# 存储最大的
+list_max_so_number = []
+dict_esn_so_number = {}
+list_max_so_number0 = []
+list_max_so_number1 = []
+list_max_so_number2 = []
+list_ESN_repeat.pop(0)
+for t in list_ESN_repeat:
+    max_so_number = 0
+    # 得到SONumber后四位的最大值对应的ESN-SONumber,添加到map(dict_esn_so_number)
+    try:
+        if int(str(t[13])[-4:]) > max_so_number:
+            max_so_number = int(str(t[13])[-4:])
+            list_max_so_number0 = t[34]
+            list_max_so_number1 = t[13]
+            list_max_so_number2 = max_so_number
+            dict_esn_so_number[list_max_so_number0] = [list_max_so_number1, list_max_so_number2]
+    except:
+        print("程序运行失败,请退出程序,检查Sales Order Number列的内容是否包含特殊字符")
+        input()
+
+# 获取集合：SONumber后四位最大值对应的SONumber
+set_ESN_repeat_max_sales_order_number = set()
+for key in dict_esn_so_number:
+    set_ESN_repeat_max_sales_order_number.add(str(dict_esn_so_number[key][0]))
+
 # 根据set_ESN_repeat集合的找到重复记录所在行号，然后删除
 # 注意循环是从最后一行至首行遍历的，因为删除记录时会使记录数变更
 # step1 集合set_ESN_repeat移除'ESN'元素
-# step2 遍历判断每行的ESN是否在集合set_ESN_repeat中
+# step2 遍历判断每行的ESN是否在集合set_ESN_repeat中  （# 删除的条件 1、ESN在set_ESN_repeat 2、Sales Order Number不在list_max_so_number）
 # step3 获取行号，删除记录
 
 r_del = ws_new.max_row
 set_ESN_repeat.discard('ESN')
 while r_del >= 1:
-    if ws_new.cell(r_del, 35).value in set_ESN_repeat:
+    if ws_new.cell(r_del, 35).value in set_ESN_repeat and str(ws_new.cell(r_del, 14).value) not in set_ESN_repeat_max_sales_order_number:
         ws_new.delete_rows(r_del)
     r_del -= 1
-
 
 # 保存
 # --------------------------------------------------------------------------------
@@ -236,4 +269,4 @@ wb_new.save(destinat)
 
 endtime = datetime.datetime.now()
 
-print( "Done! Use seconds " + str(  (endtime - starttime).seconds ))
+print("Done! Use seconds " + str((endtime - starttime).seconds))
