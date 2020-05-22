@@ -15,9 +15,29 @@ import datetime
 
 starttime = datetime.datetime.now()
 
+doc = """
+
+  _____       _   _                   _____                   _             
+ |  __ \     | | | |                 |  __ \                 (_)            
+ | |__) |   _| |_| |__   ___  _ __   | |__) |   _ _ __  _ __  _ _ __   __ _ 
+ |  ___/ | | | __| '_ \ / _ \| '_ \  |  _  / | | | '_ \| '_ \| | '_ \ / _` |
+ | |   | |_| | |_| | | | (_) | | | | | | \ \ |_| | | | | | | | | | | | (_| |
+ |_|    \__, |\__|_| |_|\___/|_| |_| |_|  \_\__,_|_| |_|_| |_|_|_| |_|\__, |
+         __/ |                                                         __/ |
+        |___/                                                         |___/
+--------------Please have a cup of coffee and wait patiently--------------- 
+"""
+print(doc)
+
 # source/destinat
 source = "source.xlsx"
 destinat = "destination.xlsx"
+# 加载模板文件列表
+source_tem = "TeamTemplate.xlsx"
+wb_tem = openpyxl.load_workbook(source_tem)
+ws_tem = wb_tem.worksheets[0]
+# 按行获取模板表
+list_template = (list(ws_tem.values))
 
 print("Get data source successfully---" + source)
 
@@ -63,6 +83,23 @@ wb_new = openpyxl.load_workbook(destinat, data_only=True)
 # wb_new 目标工作簿的第一个工作表
 ws_new = wb_new.worksheets[0]
 
+# r = 1
+# for cell in list(ws_new.columns)[6]:
+#     # print(list(ws_new.columns)[6])
+#     ws_new.cell(r, 7, '0' + str(cell.value))
+#     r += 1
+
+doc2 = """
+    "The program is processing... < customer type - by No >"
+    "The program is processing... < Ship-to >"
+    "The program is processing... < Invoice Number >"
+    "The program is processing... < RC >"
+    "The program is processing... < customer type - by No >"
+    "The program is processing... < ESN >"
+    "The program is processing... < Config #- >"
+"""
+print(doc2)
+
 # 获取第六列
 
 # G列(Customer Type - by No.)列补位操作
@@ -86,7 +123,8 @@ list_Invoice_Number_pre3 = [str(col.value)[0:3] for col in ws_new['Q:Q']]
 # 新增AZ列存放RC
 nrows = ws_new.max_column
 # 写表头
-ws_new.cell(1, nrows + 1, 'RC')
+ws_new.cell(1, 45, 'RC')
+ws_new.cell(1, 46, 'Team')
 # Invoice_Date/Invoice_GL_Date时间格式化 time.strptime
 ts_Invoice_Date = ""
 ts_Invoice_GL_Date = ""
@@ -137,7 +175,8 @@ while r <= ws_new.max_row:
             col += 1
 
     # 追加一列写入RC值
-    ws_new.cell(r, nrows + 1, list_Invoice_Number_pre3[r - 1])
+    # ws_new.cell(r, nrows + 1, list_Invoice_Number_pre3[r - 1])
+    ws_new.cell(r, 45, list_Invoice_Number_pre3[r - 1])
 
     # GM% 列的处理，数据源是计算列公式结果是  10% 按照去公式处理 读取到 0.1 需要*100
     GM = ws_new.cell(r, 44).value * 100
@@ -152,14 +191,53 @@ while r <= ws_new.max_row:
     ws_new.cell(r, 19, str(ts_Invoice_GL_Date.tm_year) + "/" + str(ts_Invoice_GL_Date.tm_mon) + "/" + str(
         ts_Invoice_GL_Date.tm_mday))
 
+    # 功能十二:新增列"Team"列
+    # 1、根据TradeType、ProjectType、Item Description  确定Team = 进口/出口 + 机型 + Configuration/Bus/Trunk
+    # 2、台湾的特殊处理 根据Customer Code 包含台湾的确定
+    # 3、隆工的特殊处理 根据“Item Number” 后缀有GCIC的属于GCIC，否则属于DCEC
+    # --------------------------------------------------------------------------------
+
+    TradeType = ""
+    ProjectType = ""
+    t = 2
+    while t <= ws_tem.max_row:
+
+        if str(ws_new.cell(r, 3).value) == "EXP":
+            TradeType = "Export"
+        else:
+            TradeType = "Domestic"
+
+        if str(ws_new.cell(r, 30).value).find("CX") >= 0:
+            ProjectType = "Configuration"
+        elif str(ws_new.cell(r, 30).value).find("BX") >= 0:
+            ProjectType = "Truck"
+        elif str(ws_new.cell(r, 30).value).find("BU") >= 0:
+            ProjectType = "Bus"
+
+
+        # TradeType \ ProjectType \ Item Description 和模板的记录匹配，然后写入Team列
+        if TradeType == str( list_template[t - 1][0]) \
+                and ProjectType == str(list_template[t - 1][1]) \
+                and str(list_template[t - 1][2]) == str(ws_new.cell(r, 31).value):
+
+            ws_new.cell(r, 46, list_template[r - 1][4])
+            # 台湾特殊处理 如果 Customer Code 包含 TAIWAN ，则Team 为 Taiwan XX XX
+            if str(ws_new.cell(r, 5).value).find("TAIWAN") >= 0:
+                ws_new.cell(r, 46, "TAIWAN" + " " + str(ws_tem.cell(t, 4).value) + " " + "ProjectType")
+
+
+        # 隆工特殊处理---Item Description 包含 QSB7 隆工需要根据“Item Number” 后缀有GCIC的属于GCIC，否则属于DCEC
+        if str(ws_new.cell(r, 31).value).find("QSB7") >= 0:
+            if str(ws_new.cell(r, 29).value).find("-GCIC") >= 0:
+                ws_new.cell(r, 46, TradeType + " " + "GCIC" + " " + ProjectType)
+            else:
+                ws_new.cell(r, 46, TradeType + " " + "DCEC" + " " + ProjectType)
+
+
+
+        t += 1
+
     r += 1
-
-# 功能十:退货流程
-# --------------------------------------------------------------------------------
-
-
-# 功能十二:新增列"Team"列，功能待讨论
-# --------------------------------------------------------------------------------
 
 # 功能十三:处理完成后，把ESN重复的做标记或者筛选出来
 # --------------------------------------------------------------------------------
@@ -190,29 +268,8 @@ ws_new_esn = wb_new.worksheets[1]
 for r in list_ESN_repeat:
     ws_new_esn.append(r)
 
-# 存放集合-重复ESN记录中sales_order_number最大的那个
-set_ESN_repeat.discard('ESN')
-set_ESN_repeat_max_sales_order_number = set()
-# 定义一个空map存放ESN-Sales Order Number
-
-print(set_ESN_repeat)
-
-# r = 2
-# for t in set_ESN_repeat:
-#     print(t)
-#     dict_esn_so_number[t] = ""
-#     r += 1
-
-# print(dict_esn_so_number)
-
-
-# 根据set_ESN_repeat集合的找到重复记录所在行号，然后删除
-# 注意循环是从最后一行至首行遍历的，因为删除记录时会使记录数变更
-# step1 集合set_ESN_repeat移除'ESN'元素
-# step2 遍历判断每行的ESN是否在集合set_ESN_repeat中
-# step3 获取行号，删除记录
-
-
+# 功能十:退货流程
+# --------------------------------------------------------------------------------
 # 定义map dict_esn_so_number 存放 [ ESN:[SONumber,SONumber[-4:]] ]
 # 存储最大的
 list_max_so_number = []
@@ -224,33 +281,35 @@ list_ESN_repeat.pop(0)
 for t in list_ESN_repeat:
     max_so_number = 0
     # 得到SONumber后四位的最大值对应的ESN-SONumber,添加到map(dict_esn_so_number)
-    if int(str(t[13])[-4:]) > max_so_number:
-        max_so_number = int(str(t[13])[-4:])
-        list_max_so_number0 = t[34]
-        list_max_so_number1 = t[13]
-        list_max_so_number2 = max_so_number
-        dict_esn_so_number[list_max_so_number0] = [list_max_so_number1, list_max_so_number2]
-
-print(dict_esn_so_number)
+    try:
+        if int(str(t[13])[-4:]) > max_so_number:
+            max_so_number = int(str(t[13])[-4:])
+            list_max_so_number0 = t[34]
+            list_max_so_number1 = t[13]
+            list_max_so_number2 = max_so_number
+            dict_esn_so_number[list_max_so_number0] = [list_max_so_number1, list_max_so_number2]
+    except:
+        print("程序运行失败,请退出程序,检查Sales Order Number列的内容是否包含特殊字符")
+        input()
 
 # 获取集合：SONumber后四位最大值对应的SONumber
+set_ESN_repeat_max_sales_order_number = set()
 for key in dict_esn_so_number:
     set_ESN_repeat_max_sales_order_number.add(str(dict_esn_so_number[key][0]))
 
-print(set_ESN_repeat_max_sales_order_number)
-
-# 删除的条件 1、ESN在set_ESN_repeat 2、Sales Order Number不在list_max_so_number
+# 根据set_ESN_repeat集合的找到重复记录所在行号，然后删除
+# 注意循环是从最后一行至首行遍历的，因为删除记录时会使记录数变更
+# step1 集合set_ESN_repeat移除'ESN'元素
+# step2 遍历判断每行的ESN是否在集合set_ESN_repeat中  （# 删除的条件 1、ESN在set_ESN_repeat 2、Sales Order Number不在list_max_so_number）
+# step3 获取行号，删除记录
 
 r_del = ws_new.max_row
-
+set_ESN_repeat.discard('ESN')
 while r_del >= 1:
-    if ws_new.cell(r_del, 35).value in set_ESN_repeat and str(ws_new.cell(r_del,14).value) not in set_ESN_repeat_max_sales_order_number:
-
-        # print(str(ws_new.cell(r_del, 14)) not in set_ESN_repeat_max_sales_order_number )
-        # print(ws_new.cell(r_del,1).value)
+    if ws_new.cell(r_del, 35).value in set_ESN_repeat and str(
+            ws_new.cell(r_del, 14).value) not in set_ESN_repeat_max_sales_order_number:
         ws_new.delete_rows(r_del)
     r_del -= 1
-
 
 # 保存
 # --------------------------------------------------------------------------------
