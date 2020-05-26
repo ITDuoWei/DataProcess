@@ -39,6 +39,8 @@ ws_tem = wb_tem.worksheets[0]
 # 按行获取模板表
 list_template = (list(ws_tem.values))
 
+print(list_template)
+
 print("Get data source successfully---" + source)
 
 # 功能一:读取制定的工作簿
@@ -179,8 +181,15 @@ while r <= ws_new.max_row:
     ws_new.cell(r, 45, list_Invoice_Number_pre3[r - 1])
 
     # GM% 列的处理，数据源是计算列公式结果是  10% 按照去公式处理 读取到 0.1 需要*100
-    GM = ws_new.cell(r, 44).value * 100
-    ws_new.cell(r, 44, str(GM) + "%")
+
+    GM = ws_new.cell(r, 44).value
+
+    # 如果GM是数值型则进行运算
+    if type(GM) == float or type(GM) == int:
+        GM = GM * 100
+        ws_new.cell(r, 44, str(GM) + "%")
+    else:
+        ws_new.cell(r, 44, str(GM))
 
     ts_Invoice_Date = time.strptime(str(ws_new.cell(r, 18).value), "%Y-%m-%d %H:%M:%S")
     ts_Invoice_GL_Date = time.strptime(str(ws_new.cell(r, 19).value), "%Y-%m-%d %H:%M:%S")
@@ -199,6 +208,7 @@ while r <= ws_new.max_row:
 
     TradeType = ""
     ProjectType = ""
+    ItemDescription = ""
     t = 2
     while t <= ws_tem.max_row:
 
@@ -214,17 +224,18 @@ while r <= ws_new.max_row:
         elif str(ws_new.cell(r, 30).value).find("BU") >= 0:
             ProjectType = "Bus"
 
+        ItemDescription = str(ws_new.cell(r, 31).value)
+        # print(ItemDescription)
+
 
         # TradeType \ ProjectType \ Item Description 和模板的记录匹配，然后写入Team列
-        if TradeType == str( list_template[t - 1][0]) \
+        if TradeType == str(list_template[t - 1][0]) \
                 and ProjectType == str(list_template[t - 1][1]) \
                 and str(list_template[t - 1][2]) == str(ws_new.cell(r, 31).value):
-
-            ws_new.cell(r, 46, list_template[r - 1][4])
+            ws_new.cell(r, 46, list_template[t - 1][4])
             # 台湾特殊处理 如果 Customer Code 包含 TAIWAN ，则Team 为 Taiwan XX XX
             if str(ws_new.cell(r, 5).value).find("TAIWAN") >= 0:
                 ws_new.cell(r, 46, "TAIWAN" + " " + str(ws_tem.cell(t, 4).value) + " " + "ProjectType")
-
 
         # 隆工特殊处理---Item Description 包含 QSB7 隆工需要根据“Item Number” 后缀有GCIC的属于GCIC，否则属于DCEC
         if str(ws_new.cell(r, 31).value).find("QSB7") >= 0:
@@ -232,8 +243,6 @@ while r <= ws_new.max_row:
                 ws_new.cell(r, 46, TradeType + " " + "GCIC" + " " + ProjectType)
             else:
                 ws_new.cell(r, 46, TradeType + " " + "DCEC" + " " + ProjectType)
-
-
 
         t += 1
 

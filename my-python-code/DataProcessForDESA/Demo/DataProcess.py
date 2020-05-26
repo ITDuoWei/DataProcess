@@ -179,17 +179,39 @@ while r <= ws_new.max_row:
     ws_new.cell(r, 45, list_Invoice_Number_pre3[r - 1])
 
     # GM% 列的处理，数据源是计算列公式结果是  10% 按照去公式处理 读取到 0.1 需要*100
-    GM = ws_new.cell(r, 44).value * 100
-    ws_new.cell(r, 44, str(GM) + "%")
 
-    ts_Invoice_Date = time.strptime(str(ws_new.cell(r, 18).value), "%Y-%m-%d %H:%M:%S")
-    ts_Invoice_GL_Date = time.strptime(str(ws_new.cell(r, 19).value), "%Y-%m-%d %H:%M:%S")
+    GM = ws_new.cell(r, 44).value
 
+    # 如果GM是数值型则进行运算
+    if type(GM) == float or type(GM) == int:
+        GM = GM * 100
+        ws_new.cell(r, 44, str(GM) + "%")
+    else:
+        ws_new.cell(r, 44, str(GM))
+
+    # 先设置Invoice Date和ts_Invoice_GL_Date 格式为 YY/m/d
     # Invoice Date/Invoice GL Date 日期格式化 YY/m/d
-    ws_new.cell(r, 18,
-                str(ts_Invoice_Date.tm_year) + "/" + str(ts_Invoice_Date.tm_mon) + "/" + str(ts_Invoice_Date.tm_mday))
-    ws_new.cell(r, 19, str(ts_Invoice_GL_Date.tm_year) + "/" + str(ts_Invoice_GL_Date.tm_mon) + "/" + str(
-        ts_Invoice_GL_Date.tm_mday))
+    Invoice_Date = ws_new.cell(r, 18).value
+    Invoice_GL_Date = ws_new.cell(r, 19).value
+    ShipDate = ws_new.cell(r, 21).value
+    InvoiceDueDate = ws_new.cell(r, 22).value
+
+    if not Invoice_Date is None:
+        ts_Invoice_Date = time.strptime(str(Invoice_Date), "%Y-%m-%d %H:%M:%S")
+        ws_new.cell(r, 18, str(ts_Invoice_Date.tm_year) + "/" + str(ts_Invoice_Date.tm_mon) + "/" + str(
+            ts_Invoice_Date.tm_mday))
+    if not Invoice_GL_Date is None:
+        ts_Invoice_GL_Date = time.strptime(str(ws_new.cell(r, 19).value), "%Y-%m-%d %H:%M:%S")
+        ws_new.cell(r, 19, str(ts_Invoice_GL_Date.tm_year) + "/" + str(ts_Invoice_GL_Date.tm_mon) + "/" + str(
+            ts_Invoice_GL_Date.tm_mday))
+    if not ShipDate is None:
+        ts_ShipDate = time.strptime(str(ws_new.cell(r, 21).value), "%Y-%m-%d %H:%M:%S")
+        ws_new.cell(r, 21, str(ts_ShipDate.tm_year) + "/" + str(ts_ShipDate.tm_mon) + "/" + str(
+            ts_ShipDate.tm_mday))
+    if not InvoiceDueDate is None:
+        ts_InvoiceDueDate = time.strptime(str(ws_new.cell(r, 22).value), "%Y-%m-%d %H:%M:%S")
+        ws_new.cell(r, 22, str(ts_InvoiceDueDate.tm_year) + "/" + str(ts_InvoiceDueDate.tm_mon) + "/" + str(
+            ts_InvoiceDueDate.tm_mday))
 
     # 功能十二:新增列"Team"列
     # 1、根据TradeType、ProjectType、Item Description  确定Team = 进口/出口 + 机型 + Configuration/Bus/Trunk
@@ -199,6 +221,7 @@ while r <= ws_new.max_row:
 
     TradeType = ""
     ProjectType = ""
+    ItemDescription = ""
     t = 2
     while t <= ws_tem.max_row:
 
@@ -208,32 +231,35 @@ while r <= ws_new.max_row:
             TradeType = "Domestic"
 
         if str(ws_new.cell(r, 30).value).find("CX") >= 0:
-            ProjectType = "Configuration"
+            ProjectType = "Construction"
         elif str(ws_new.cell(r, 30).value).find("BX") >= 0:
             ProjectType = "Truck"
         elif str(ws_new.cell(r, 30).value).find("BU") >= 0:
             ProjectType = "Bus"
 
+        ItemDescription = str(ws_new.cell(r, 31).value)
+
+        # 忽略大小写
+        flag = (str.upper(TradeType) == str.upper(str(list_template[t - 1][0]))
+                and str.upper(ProjectType) == str.upper(str(list_template[t - 1][1]))
+                and str.upper(ItemDescription) == str.upper(str(list_template[t - 1][2])))
+
+        # flag = TradeType == str(list_template[t - 1][0]) and ProjectType == str(
+        #     list_template[t - 1][1]) and ItemDescription == str(list_template[t - 1][2])
 
         # TradeType \ ProjectType \ Item Description 和模板的记录匹配，然后写入Team列
-        if TradeType == str( list_template[t - 1][0]) \
-                and ProjectType == str(list_template[t - 1][1]) \
-                and str(list_template[t - 1][2]) == str(ws_new.cell(r, 31).value):
-
-            ws_new.cell(r, 46, list_template[r - 1][4])
+        if flag:
+            ws_new.cell(r, 46, list_template[t - 1][4])
             # 台湾特殊处理 如果 Customer Code 包含 TAIWAN ，则Team 为 Taiwan XX XX
             if str(ws_new.cell(r, 5).value).find("TAIWAN") >= 0:
                 ws_new.cell(r, 46, "TAIWAN" + " " + str(ws_tem.cell(t, 4).value) + " " + "ProjectType")
 
-
         # 隆工特殊处理---Item Description 包含 QSB7 隆工需要根据“Item Number” 后缀有GCIC的属于GCIC，否则属于DCEC
-        if str(ws_new.cell(r, 31).value).find("QSB7") >= 0:
+        if str(ws_new.cell(r, 31).value).find("QSB7") >= 0 or str(ws_new.cell(r, 31).value).find("QSB6.7") >= 0:
             if str(ws_new.cell(r, 29).value).find("-GCIC") >= 0:
                 ws_new.cell(r, 46, TradeType + " " + "GCIC" + " " + ProjectType)
             else:
                 ws_new.cell(r, 46, TradeType + " " + "DCEC" + " " + ProjectType)
-
-
 
         t += 1
 
