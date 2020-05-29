@@ -145,6 +145,10 @@ ts_Invoice_GL_Date = ""
 # 首行是标题行跳过不处理
 r = 2
 while r <= ws_new.max_row:
+    if r % 100 == 0:
+        print("已经经历了" + str(r) + "条记录,剩余" + str(ws_new.max_row - (r / 100)*100  ))
+
+
     # 写入第七列 Customer Type - by No.
     ws_new.cell(r, 7, '0' + str(list_CustomerType[r - 1]))
 
@@ -293,6 +297,9 @@ list_ESN = ['ESN']
 set_ESN_repeat = set()
 r_ESN = 1
 while r_ESN < ws_new.max_row:
+    if r_ESN % 100 == 0:
+        print("筛选ESN重复过程,已经经历了" + str(r) + "条记录,剩余" + str(ws_new.max_row - (r_ESN / 100)*100  ))
+
     # 如果当前值在重复列表中不存在则追加到 list_ESN
     if (ws_new.cell(r_ESN, 35).value not in list_ESN):
         list_ESN.append(ws_new.cell(r_ESN, 35).value)

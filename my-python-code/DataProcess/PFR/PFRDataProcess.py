@@ -33,7 +33,7 @@ while r <= ws_target.max_row:
 
     ws_source_Units = ws_source.cell(r, 21).value
     ws_source_NetSales = ws_source.cell(r, 24).value
-    ws_source_ProdCost = ws_source.cell(r,25).value
+    ws_source_ProdCost = ws_source.cell(r, 25).value
     ws_source_Material = ws_source.cell(r, 30).value
     ws_source_Conversion = ws_source.cell(r, 31).value
 
@@ -43,8 +43,6 @@ while r <= ws_target.max_row:
     except:
         ws_target.cell(r, 38, "")
 
-
-
     # 内销
     if "BHO/CQP/DFM/XCE".find(ws_source_MFGPlant) >= 0:
         try:
@@ -52,7 +50,7 @@ while r <= ws_target.max_row:
             ws_target.cell(r, 39, UnitCost)
         except:
             ws_target.cell(r, 39, "")
-    else:# 进口
+    else:  # 进口
         try:
             UnitCost = ws_source_ProdCost / ws_source_Units
             ws_target.cell(r, 39, UnitCost)
@@ -71,14 +69,13 @@ while r <= ws_target.max_row:
     except:
         ws_target.cell(r, 41, "")
 
-
-
     # RC #  ws_source_Application = “CONSTRUCTION” 为 587 其他都是 497
     if ws_source_Application == "CONSTRUCTION":
         ws_target.cell(r, 42, 587)
     else:
         ws_target.cell(r, 42, 497)
 
+    # Team 生成
     t = 2
     while t <= ws_template.max_row:
         ws_template_Category = str(ws_template.cell(t, 1).value).upper()
@@ -107,6 +104,10 @@ while r <= ws_target.max_row:
                 and ws_source_EngineFamily == "B6.7" \
                 and ws_source_FCGName == "LONKING SHANGHAI":
             ws_target.cell(r, 37, "Domestic DCEC construction")
+
+
+    if r % 100 == 0:
+        print("已经为您处理了" + str(r) + "条记录,剩余" + str(ws_target.max_row - (r / 100)*100  ))
 
     r += 1
 
