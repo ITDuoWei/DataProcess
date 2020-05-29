@@ -33,35 +33,51 @@ while r <= ws_target.max_row:
 
     ws_source_Units = ws_source.cell(r, 21).value
     ws_source_NetSales = ws_source.cell(r, 24).value
+    ws_source_ProdCost = ws_source.cell(r,25).value
     ws_source_Material = ws_source.cell(r, 30).value
     ws_source_Conversion = ws_source.cell(r, 31).value
 
     try:
         UnitPrice = ws_source_NetSales / ws_source_Units
-        ws_target.cell(r,38,UnitPrice)
+        ws_target.cell(r, 38, UnitPrice)
     except:
         ws_target.cell(r, 38, "")
 
-    try:
-        UnitCost = ws_source_Material / ws_source_Units
-        ws_target.cell(r,39,UnitCost)
-    except:
-        ws_target.cell(r, 39, "")
+
+
+    # 内销
+    if "BHO/CQP/DFM/XCE".find(ws_source_MFGPlant) >= 0:
+        try:
+            UnitCost = ws_source_Material / ws_source_Units
+            ws_target.cell(r, 39, UnitCost)
+        except:
+            ws_target.cell(r, 39, "")
+    else:# 进口
+        try:
+            UnitCost = ws_source_ProdCost / ws_source_Units
+            ws_target.cell(r, 39, UnitCost)
+        except:
+            ws_target.cell(r, 39, "")
 
     try:
         UnitGM = UnitPrice - UnitCost
-        ws_target.cell(r,40,UnitGM)
+        ws_target.cell(r, 40, UnitGM)
     except:
         ws_target.cell(r, 40, "")
 
     try:
         UnitGM_precent = UnitGM / UnitPrice * 100
-        ws_target.cell(r,41,UnitGM_precent)
+        ws_target.cell(r, 41, UnitGM_precent)
     except:
         ws_target.cell(r, 41, "")
 
 
-    # RC =
+
+    # RC #  ws_source_Application = “CONSTRUCTION” 为 587 其他都是 497
+    if ws_source_Application == "CONSTRUCTION":
+        ws_target.cell(r, 42, 587)
+    else:
+        ws_target.cell(r, 42, 497)
 
     t = 2
     while t <= ws_template.max_row:
@@ -90,10 +106,7 @@ while r <= ws_target.max_row:
                 and ws_source_Application == "CONSTRUCTION" \
                 and ws_source_EngineFamily == "B6.7" \
                 and ws_source_FCGName == "LONKING SHANGHAI":
-            if ws_source_FCGName.find("GCIC"):
-                ws_target.cell(r, 37, "Domestic GCIC construction")
-            else:
-                ws_target.cell(r, 37, "Domestic DCEC construction")
+            ws_target.cell(r, 37, "Domestic DCEC construction")
 
     r += 1
 
