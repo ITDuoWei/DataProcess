@@ -5,7 +5,7 @@ PFR_target = "PFRTarget.xlsx"
 Tem_source = "PFRTeamTemplate.xlsx"
 
 wb_source = openpyxl.load_workbook(PFR_source)
-ws_source = wb_source.worksheets[1]
+ws_source = wb_source.worksheets[0]
 
 # 目标表
 wb_target = openpyxl.Workbook()
