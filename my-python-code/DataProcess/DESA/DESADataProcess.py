@@ -147,7 +147,7 @@ ts_Invoice_GL_Date = ""
 r = 2
 while r <= ws_new.max_row:
     if r % 100 == 0:
-        print("已经处理了" + str(r) + "条记录,剩余" + str(ws_new.max_row - (r / 100) * 100) + "条记录")
+        print("Passed " + str(r) + " records,surplus " + str( int(ws_new.max_row - (r / 100) * 100) ) + " records")
 
     # 写入第七列 Customer Type - by No.
     ws_new.cell(r, 7, '0' + str(list_CustomerType[r - 1]))
@@ -298,7 +298,7 @@ set_ESN_repeat = set()
 r_ESN = 1
 while r_ESN < ws_new.max_row:
     if r_ESN % 100 == 0:
-        print("筛选ESN重复过程,已经经历了" + str(r) + "条记录,剩余" + str(ws_new.max_row - (r_ESN / 100) * 100) + "条记录")
+        print("Filter duplicates,Passed " + str(r) + " records,surplus " + str( int(ws_new.max_row - (r_ESN / 100) * 100) ) + " records")
 
     # 如果当前值在重复列表中不存在则追加到 list_ESN
     if (ws_new.cell(r_ESN, 35).value not in list_ESN):
@@ -369,3 +369,6 @@ wb_new.save(destinat)
 endtime = datetime.datetime.now()
 
 print("Done! Use seconds " + str((endtime - starttime).seconds))
+print("Mission accomplished!Please exit")
+input()
+

@@ -1,4 +1,22 @@
 import openpyxl
+import datetime
+
+starttime = datetime.datetime.now()
+
+
+doc = """
+
+  _____       _   _                   _____                   _             
+ |  __ \     | | | |                 |  __ \                 (_)            
+ | |__) |   _| |_| |__   ___  _ __   | |__) |   _ _ __  _ __  _ _ __   __ _ 
+ |  ___/ | | | __| '_ \ / _ \| '_ \  |  _  / | | | '_ \| '_ \| | '_ \ / _` |
+ | |   | |_| | |_| | | | (_) | | | | | | \ \ |_| | | | | | | | | | | | (_| |
+ |_|    \__, |\__|_| |_|\___/|_| |_| |_|  \_\__,_|_| |_|_| |_|_|_| |_|\__, |
+         __/ |                                                         __/ |
+        |___/                                                         |___/
+--------------Please have a cup of coffee and wait patiently--------------- 
+"""
+print(doc)
 
 PFR_source = "PFRsource.xlsx"
 PFR_target = "PFRTarget.xlsx"
@@ -107,8 +125,13 @@ while r <= ws_target.max_row:
 
 
     if r % 100 == 0:
-        print("已经为您处理了" + str(r) + "条记录,剩余" + str(ws_target.max_row - (r / 100)*100  ))
+        print("Passed " + str(r) + " records,surplus " + str( int(ws_target.max_row - (r / 100)*100)  ) +" records")
 
     r += 1
 
 wb_target.save(PFR_target)
+
+endtime = datetime.datetime.now()
+print("Done! Use seconds " + str((endtime - starttime).seconds))
+print("Mission accomplished!Please exit")
+input()
