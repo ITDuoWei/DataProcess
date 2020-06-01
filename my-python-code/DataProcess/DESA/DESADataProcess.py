@@ -146,7 +146,7 @@ ts_Invoice_GL_Date = ""
 r = 2
 while r <= ws_new.max_row:
     if r % 100 == 0:
-        print("已经经历了" + str(r) + "条记录,剩余" + str(ws_new.max_row - (r / 100)*100  ))
+        print("已经处理了" + str(r) + "条记录,剩余" + str(ws_new.max_row - (r / 100)*100  ) + "条记录" )
 
 
     # 写入第七列 Customer Type - by No.
