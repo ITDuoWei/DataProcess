@@ -298,7 +298,7 @@ set_ESN_repeat = set()
 r_ESN = 1
 while r_ESN < ws_new.max_row:
     if r_ESN % 100 == 0:
-        print("Filter duplicates,Passed " + str(r) + " records,surplus " + str( int(ws_new.max_row - (r_ESN / 100) * 100) ) + " records")
+        print("Filter ESN duplicates,Passed " + str(r_ESN) + " records,surplus " + str( int(ws_new.max_row - (r_ESN / 100) * 100) ) + " records")
 
     # 如果当前值在重复列表中不存在则追加到 list_ESN
     if (ws_new.cell(r_ESN, 35).value not in list_ESN):
