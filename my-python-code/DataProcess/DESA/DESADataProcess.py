@@ -110,6 +110,7 @@ doc2 = """
     "The program is processing... < customer type - by No >"
     "The program is processing... < ESN >"
     "The program is processing... < Config #- >"
+    "The program is processing... < Team- >"
 """
 print(doc2)
 
@@ -146,8 +147,7 @@ ts_Invoice_GL_Date = ""
 r = 2
 while r <= ws_new.max_row:
     if r % 100 == 0:
-        print("已经处理了" + str(r) + "条记录,剩余" + str(ws_new.max_row - (r / 100)*100  ) + "条记录" )
-
+        print("已经处理了" + str(r) + "条记录,剩余" + str(ws_new.max_row - (r / 100) * 100) + "条记录")
 
     # 写入第七列 Customer Type - by No.
     ws_new.cell(r, 7, '0' + str(list_CustomerType[r - 1]))
@@ -267,19 +267,19 @@ while r <= ws_new.max_row:
         # TradeType \ ProjectType \ Item Description 和模板的记录匹配，然后写入Team列
         if flag:
             ws_new.cell(r, 46, list_template[t - 1][4])
-            # 台湾特殊处理 如果 Customer Code 包含 TAIWAN ，则Team 为 Taiwan XX XX
-            if str(ws_new.cell(r, 5).value).find("TAIWAN") >= 0:
-                ws_new.cell(r, 46, "TAIWAN" + " " + str(ws_tem.cell(t, 4).value) + " " + "ProjectType")
+        t += 1
+
+        # 台湾特殊处理 如果 Customer Code 包含 TAIWAN ，则Team 为 Taiwan XX XX
+        if str(ws_new.cell(r, 5).value).find("TAIWAN") >= 0:
+            ws_new.cell(r, 46, "TAIWAN" + " " + str(ws_tem.cell(t, 4).value) + " " + "ProjectType")
 
         # 隆工特殊处理---Item Description 包含 QSB7 隆工需要根据“Item Number” 后缀有GCIC的属于GCIC，否则属于DCEC
         if (str(ws_new.cell(r, 31).value).find("QSB7") >= 0 or str(ws_new.cell(r, 31).value).find("QSB6.7") >= 0) \
                 and str(ws_new.cell(r, 4).value) == "LONKING (SHANGHAI) EXCAVATOR CO LTD":
-            if str(ws_new.cell(r, 29).value).find("-GCIC") >= 0:
+            if str(ws_new.cell(r, 29).value).find("GCIC") >= 0:
                 ws_new.cell(r, 46, TradeType + " " + "GCIC" + " " + ProjectType)
             else:
                 ws_new.cell(r, 46, TradeType + " " + "DCEC" + " " + ProjectType)
-
-        t += 1
 
     r += 1
 
@@ -298,7 +298,7 @@ set_ESN_repeat = set()
 r_ESN = 1
 while r_ESN < ws_new.max_row:
     if r_ESN % 100 == 0:
-        print("筛选ESN重复过程,已经经历了" + str(r) + "条记录,剩余" + str(ws_new.max_row - (r_ESN / 100)*100  ))
+        print("筛选ESN重复过程,已经经历了" + str(r) + "条记录,剩余" + str(ws_new.max_row - (r_ESN / 100) * 100) + "条记录")
 
     # 如果当前值在重复列表中不存在则追加到 list_ESN
     if (ws_new.cell(r_ESN, 35).value not in list_ESN):
