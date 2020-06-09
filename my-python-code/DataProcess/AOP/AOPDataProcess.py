@@ -68,7 +68,7 @@ try:
     max_column = ws.max_column
     max_row = ws.max_row
     if (max_column - 14) % 13 != 0:
-        print("Make sure that the number of columns after N is a multiple of 13！！！")
+        print("Make sure that the number of columns after N is a multiple of 13")
         check_stop = True
 
     if check_stop:
