@@ -36,9 +36,18 @@ try:
     # 加载模板文件列表
     source_tem = "TeamTemplate.xlsx"
     wb_tem = openpyxl.load_workbook(source_tem)
+    # 获取Team模板表
     ws_tem = wb_tem.worksheets[0]
+    # 获取Team与LOB关系表
+    ws_tem_LOB = wb_tem.worksheets[1]
+    # 获取Config与Emission关系表
+    ws_tem_Emission = wb_tem.worksheets[2]
     # 按行获取模板表
     list_template = (list(ws_tem.values))
+    # 按行获取LOB关系表
+    list_template_LOB = (list(ws_tem_LOB.values))
+    # 按行获取Emission关系表
+    list_template_Emission = (list(ws_tem_Emission.values))
 
     print("Get data source successfully---" + source)
 
@@ -112,6 +121,8 @@ try:
         "The program is processing... < ESN >"
         "The program is processing... < Config #- >"
         "The program is processing... < Team- >"
+        "The program is processing... < LOB- >"
+        "The program is processing... < Emission- >"
     """
     print(doc2)
 
@@ -140,15 +151,18 @@ try:
     # 写表头
     ws_new.cell(1, 45, 'RC')
     ws_new.cell(1, 46, 'Team')
+    ws_new.cell(1, 47, 'LOB')
+    ws_new.cell(1, 48, 'EMISSION')
     # Invoice_Date/Invoice_GL_Date时间格式化 time.strptime
     ts_Invoice_Date = ""
     ts_Invoice_GL_Date = ""
+    team = ""
 
     # 首行是标题行跳过不处理
     r = 2
     while r <= ws_new.max_row:
         if r % 100 == 0:
-            print("Passed " + str(r) + " records,surplus " + str( int(ws_new.max_row - (r / 100) * 100) ) + " records")
+            print("Passed " + str(r) + " records,surplus " + str(int(ws_new.max_row - (r / 100) * 100)) + " records")
 
         # 写入第七列 Customer Type - by No.
         ws_new.cell(r, 7, '0' + str(list_CustomerType[r - 1]))
@@ -207,30 +221,6 @@ try:
         else:
             ws_new.cell(r, 44, str(GM))
 
-        # 先设置Invoice Date和ts_Invoice_GL_Date 格式为 YY/m/d
-        # Invoice Date/Invoice GL Date 日期格式化 YY/m/d
-        # Invoice_Date = ws_new.cell(r, 18).value
-        # Invoice_GL_Date = ws_new.cell(r, 19).value
-        # ShipDate = ws_new.cell(r, 21).value
-        # InvoiceDueDate = ws_new.cell(r, 22).value
-        #
-        # if not Invoice_Date is None:
-        #     ts_Invoice_Date = time.strptime(str(Invoice_Date), "%Y-%m-%d %H:%M:%S")
-        #     ws_new.cell(r, 18, str(ts_Invoice_Date.tm_year) + "/" + str(ts_Invoice_Date.tm_mon) + "/" + str(
-        #         ts_Invoice_Date.tm_mday))
-        # if not Invoice_GL_Date is None:
-        #     ts_Invoice_GL_Date = time.strptime(str(ws_new.cell(r, 19).value), "%Y-%m-%d %H:%M:%S")
-        #     ws_new.cell(r, 19, str(ts_Invoice_GL_Date.tm_year) + "/" + str(ts_Invoice_GL_Date.tm_mon) + "/" + str(
-        #         ts_Invoice_GL_Date.tm_mday))
-        # if not ShipDate is None:
-        #     ts_ShipDate = time.strptime(str(ws_new.cell(r, 21).value), "%Y-%m-%d %H:%M:%S")
-        #     ws_new.cell(r, 21, str(ts_ShipDate.tm_year) + "/" + str(ts_ShipDate.tm_mon) + "/" + str(
-        #         ts_ShipDate.tm_mday))
-        # if not InvoiceDueDate is None:
-        #     ts_InvoiceDueDate = time.strptime(str(ws_new.cell(r, 22).value), "%Y-%m-%d %H:%M:%S")
-        #     ws_new.cell(r, 22, str(ts_InvoiceDueDate.tm_year) + "/" + str(ts_InvoiceDueDate.tm_mon) + "/" + str(
-        #         ts_InvoiceDueDate.tm_mday))
-
         # 功能十二:新增列"Team"列
         # 1、根据TradeType、ProjectType、Item Description  确定Team = 进口/出口 + 机型 + Configuration/Bus/Trunk
         # 2、台湾的特殊处理 根据Customer Code 包含台湾的确定
@@ -267,20 +257,39 @@ try:
 
             # TradeType \ ProjectType \ Item Description 和模板的记录匹配，然后写入Team列
             if flag:
-                ws_new.cell(r, 46, list_template[t - 1][4])
+                # ws_new.cell(r, 46, list_template[t - 1][4])
+                team = list_template[t - 1][4]
             t += 1
 
-            # 台湾特殊处理 如果 Customer Code 包含 TAIWAN ，则Team 为 Taiwan XX XX
-            if str(ws_new.cell(r, 5).value).find("TAIWAN") >= 0:
-                ws_new.cell(r, 46, "TAIWAN" + " " + str(ws_tem.cell(t, 4).value) + " " + "ProjectType")
+        # 台湾特殊处理 如果 Customer Code 包含 TAIWAN ，则Team 为 Taiwan XX XX
+        if str(ws_new.cell(r, 5).value).find("TAIWAN") >= 0:
+            # ws_new.cell(r, 46, "TAIWAN" + " " + str(ws_tem.cell(t, 4).value) + " " + "ProjectType")
+            team = str(ws_tem.cell(t, 4).value) + " " + "ProjectType"
 
-            # 隆工特殊处理---Item Description 包含 QSB7 隆工需要根据“Item Number” 后缀有GCIC的属于GCIC，否则属于DCEC
-            if (str(ws_new.cell(r, 31).value).find("QSB7") >= 0 or str(ws_new.cell(r, 31).value).find("QSB6.7") >= 0) \
-                    and str(ws_new.cell(r, 5).value) == "LONKING (SHANGHAI) EXCAVATOR CO LTD":
-                if str(ws_new.cell(r, 29).value).find("GCIC") >= 0:
-                    ws_new.cell(r, 46, TradeType + " " + "GCIC" + " " + ProjectType)
-                else:
-                    ws_new.cell(r, 46, TradeType + " " + "DCEC" + " " + ProjectType)
+        # 隆工特殊处理---Item Description 包含 QSB7 隆工需要根据“Item Number” 后缀有GCIC的属于GCIC，否则属于DCEC
+        if (str(ws_new.cell(r, 31).value).find("QSB7") >= 0 or str(ws_new.cell(r, 31).value).find("QSB6.7") >= 0) \
+                and str(ws_new.cell(r, 5).value) == "LONKING (SHANGHAI) EXCAVATOR CO LTD":
+            if str(ws_new.cell(r, 29).value).find("GCIC") >= 0:
+                # ws_new.cell(r, 46, TradeType + " " + "GCIC" + " " + ProjectType)
+                team = TradeType + " " + "GCIC" + " " + ProjectType
+            else:
+                # ws_new.cell(r, 46, TradeType + " " + "DCEC" + " " + ProjectType)
+                team = TradeType + " " + "DCEC" + " " + ProjectType
+
+        ws_new.cell(r, 46, team)
+
+        # 新增LOB列
+        tb = 2
+        while tb <= ws_tem_LOB.max_row:
+            if team == list_template_LOB[tb - 1][0]:
+                ws_new.cell(r, 47, list_template_LOB[tb - 1][1])
+            tb += 1
+        # 新增Emission列
+        te = 2
+        while te <= ws_tem_Emission.max_row:
+            if str(ws_new.cell(r, 30).value) == list_template_Emission[te - 1][0]:
+                ws_new.cell(r, 48, list_template_Emission[te - 1][1])
+            te += 1
 
         r += 1
 
@@ -299,7 +308,8 @@ try:
     r_ESN = 1
     while r_ESN < ws_new.max_row:
         if r_ESN % 100 == 0:
-            print("Filter ESN duplicates,Passed " + str(r_ESN) + " records,surplus " + str( int(ws_new.max_row - (r_ESN / 100) * 100) ) + " records")
+            print("Filter ESN duplicates,Passed " + str(r_ESN) + " records,surplus " + str(
+                int(ws_new.max_row - (r_ESN / 100) * 100)) + " records")
 
         # 如果当前值在重复列表中不存在则追加到 list_ESN
         if (ws_new.cell(r_ESN, 35).value not in list_ESN):
@@ -369,6 +379,4 @@ except Exception as e:
     print("Mission error!Please check")
     traceback.print_exc()
 
-
 input()
-
