@@ -153,6 +153,8 @@ try:
     ws_new.cell(1, 46, 'Team')
     ws_new.cell(1, 47, 'LOB')
     ws_new.cell(1, 48, 'EMISSION')
+    ws_new.cell(1, 49, 'Customer')
+    ws_new.cell(1, 50, 'Engine Family')
     # Invoice_Date/Invoice_GL_Date时间格式化 time.strptime
     ts_Invoice_Date = ""
     ts_Invoice_GL_Date = ""
@@ -267,8 +269,7 @@ try:
             team = str(ws_tem.cell(t, 4).value) + " " + "ProjectType"
 
         # 隆工特殊处理---Item Description 包含 QSB7 隆工需要根据“Item Number” 后缀有GCIC的属于GCIC，否则属于DCEC
-        if (str(ws_new.cell(r, 31).value).find("QSB7") >= 0 or str(ws_new.cell(r, 31).value).find("QSB6.7") >= 0) \
-                and str(ws_new.cell(r, 5).value) == "LONKING (SHANGHAI) EXCAVATOR CO LTD":
+        if (str(ws_new.cell(r, 31).value).find("QSB7") >= 0 or str(ws_new.cell(r, 31).value).find("QSB6.7") >= 0) and str(ws_new.cell(r, 5).value) == "LONKING (SHANGHAI) EXCAVATOR CO LTD":
             if str(ws_new.cell(r, 29).value).find("GCIC") >= 0:
                 # ws_new.cell(r, 46, TradeType + " " + "GCIC" + " " + ProjectType)
                 team = TradeType + " " + "GCIC" + " " + ProjectType
@@ -287,6 +288,7 @@ try:
         # 新增Emission列
         te = 2
         while te <= ws_tem_Emission.max_row:
+            # Config的值与
             if str(ws_new.cell(r, 30).value) == list_template_Emission[te - 1][0]:
                 ws_new.cell(r, 48, list_template_Emission[te - 1][1])
             te += 1
@@ -377,6 +379,6 @@ try:
     print("Mission accomplished!Please exit")
 except Exception as e:
     print("Mission error!Please check")
-    traceback.print_exc()
+    print(traceback.format_exc())
 
 input()
