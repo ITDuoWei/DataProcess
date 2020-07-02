@@ -85,7 +85,6 @@ try:
                              ws_rebate.cell(r, 1).value,
                              ws_rebate.cell(r, 2).value]
 
-
         # 统计每个月的符合条件的数量
         debatecount1 = list_MTBECE.count(listJan + list_TBECE_rebate)
         debatecount2 = list_MTBECE.count(listFeb + list_TBECE_rebate)
@@ -99,7 +98,6 @@ try:
         debatecount10 = list_MTBECE.count(listOct + list_TBECE_rebate)
         debatecount11 = list_MTBECE.count(listNov + list_TBECE_rebate)
         debatecount12 = list_MTBECE.count(listDec + list_TBECE_rebate)
-
 
         # 如果数据值全部为空,则说明首次使用，直接更新所有数据
         if Noneflag:
@@ -158,6 +156,33 @@ try:
         countNov = ws_rebate.cell(r, 16).value
         countDec = ws_rebate.cell(r, 17).value
 
+        # 校验如果值为空设置为0
+
+        if countJan is None:
+            countJan = 0
+        if countFeb is None:
+            countFeb = 0
+        if countMar is None:
+            countMar = 0
+        if countApr is None:
+            countApr = 0
+        if countMay is None:
+            countMay = 0
+        if countJun is None:
+            countJun = 0
+        if countJul is None:
+            countJul = 0
+        if countAug is None:
+            countAug = 0
+        if countSep is None:
+            countSep = 0
+        if countOct is None:
+            countOct = 0
+        if countNov is None:
+            countNov = 0
+        if countDec is None:
+            countDec = 0
+
         try:
             countQ1 = countJan + countFeb + countMar
             countQ2 = countApr + countMay + countJun
@@ -211,6 +236,8 @@ try:
     endtime = datetime.datetime.now()
     print("Done! Use seconds " + str((endtime - starttime).seconds))
     print("Mission accomplished!Please exit")
+    input()
 except:
     print("Mission error!Please check")
     print(traceback.format_exc())
+    input()
