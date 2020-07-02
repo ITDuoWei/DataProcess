@@ -42,12 +42,21 @@ try:
     ws_tem_LOB = wb_tem.worksheets[1]
     # 获取Config与Emission关系表
     ws_tem_Emission = wb_tem.worksheets[2]
+    # 获取Customer 与 Customer Code 的关系 （Customer只是Customer Code的缩写）
+    ws_tem_cumtomer = wb_tem.worksheets[3]
+    # 获取Engine Family 与 Item Description的关系
+    ws_tem_enginefamily = wb_tem.worksheets[4]
+
     # 按行获取模板表
     list_template = (list(ws_tem.values))
     # 按行获取LOB关系表
     list_template_LOB = (list(ws_tem_LOB.values))
     # 按行获取Emission关系表
     list_template_Emission = (list(ws_tem_Emission.values))
+    # 按行获取 Customer关系
+    list_template_customer = (list(ws_tem_cumtomer.values))
+    # 按行获取Engine Family的关系
+    list_template_enginefamily = (list(ws_tem_enginefamily.values))
 
     print("Get data source successfully---" + source)
 
@@ -119,10 +128,12 @@ try:
         "The program is processing... < RC >"
         "The program is processing... < customer type - by No >"
         "The program is processing... < ESN >"
-        "The program is processing... < Config #- >"
+        "The program is processing... < Config # >"
         "The program is processing... < Team- >"
         "The program is processing... < LOB- >"
-        "The program is processing... < Emission- >"
+        "The program is processing... < Emission >"
+        "The program is processing... < Customer >"
+        "The program is processing... < Engine Family >"
     """
     print(doc2)
 
@@ -269,7 +280,8 @@ try:
             team = str(ws_tem.cell(t, 4).value) + " " + "ProjectType"
 
         # 隆工特殊处理---Item Description 包含 QSB7 隆工需要根据“Item Number” 后缀有GCIC的属于GCIC，否则属于DCEC
-        if (str(ws_new.cell(r, 31).value).find("QSB7") >= 0 or str(ws_new.cell(r, 31).value).find("QSB6.7") >= 0) and str(ws_new.cell(r, 5).value) == "LONKING (SHANGHAI) EXCAVATOR CO LTD":
+        if (str(ws_new.cell(r, 31).value).find("QSB7") >= 0 or str(ws_new.cell(r, 31).value).find(
+                "QSB6.7") >= 0) and str(ws_new.cell(r, 5).value) == "LONKING (SHANGHAI) EXCAVATOR CO LTD":
             if str(ws_new.cell(r, 29).value).find("GCIC") >= 0:
                 # ws_new.cell(r, 46, TradeType + " " + "GCIC" + " " + ProjectType)
                 team = TradeType + " " + "GCIC" + " " + ProjectType
@@ -292,6 +304,21 @@ try:
             if str(ws_new.cell(r, 30).value) == list_template_Emission[te - 1][0]:
                 ws_new.cell(r, 48, list_template_Emission[te - 1][1])
             te += 1
+
+        # 新增 Customer
+        c = 2
+        while c <= ws_tem_cumtomer.max_row:
+            if str(ws_new.cell(r, 5).value) == list_template_customer[c - 1][0]:
+                ws_new.cell(r, 49, list_template_customer[c - 1][1])
+            c += 1
+        #
+        # # 新增 Engine Family
+        ef = 2
+        while ef <= ws_tem_enginefamily.max_row:
+            if str(ws_new.cell(r, 31).value) == list_template_enginefamily[ef - 1][0]:
+                ws_new.cell(r, 50, list_template_enginefamily[ef - 1][1])
+            ef += 1
+            
 
         r += 1
 
