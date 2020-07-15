@@ -23,7 +23,7 @@ try:
 
     PFR_source = "PFRsource.xlsx"
     PFR_target = "PFRTarget.xlsx"
-    rebate_Amount = "rebateAmount.xlsx"
+    rebate_Amount = "rebateAcount.xlsx"
     template = "TeamTemplate.xlsx"
 
     wb_source = openpyxl.load_workbook(PFR_source)
@@ -76,13 +76,13 @@ try:
         l += 1
 
     dict_lob_turn = {v: k for k, v in dict_lob.items()}
-    print(dict_lob_turn)
+    # print(dict_lob_turn)
 
     r = 2
     while r <= ws_target.max_row:
         # 输出进度
-        # if r % 100 == 0:
-        #     print("Passed " + str(r) + " records,surplus " + str(int(ws_target.max_row - (r / 100) * 100)) + " records")
+        if r % 100 == 0:
+            print("Passed " + str(r) + " records,surplus " + str(int(ws_target.max_row - (r / 100) * 100)) + " records")
 
         ws_source_MFGPlant = str(ws_source.cell(r, 5).value).upper()
         PFR_EngineFamily = str(ws_source.cell(r, 7).value)
@@ -99,12 +99,14 @@ try:
         ws_source_Conversion = ws_source.cell(r, 31).value
         ws_source_AcctgPeriod = str(ws_source.cell(r, 4).value)
 
+        # 1 更新 UnitPrice
         try:
             UnitPrice = ws_source_NetSales / ws_source_Units
             ws_target.cell(r, 38, UnitPrice)
         except:
             ws_target.cell(r, 38, "")
 
+        # 2 更新Unit Cost
         # 内销
         if "BHO/CQP/DFM/XCE".find(ws_source_MFGPlant) >= 0:
             try:
@@ -119,25 +121,29 @@ try:
             except:
                 ws_target.cell(r, 39, "")
 
+        # 3 更新Unit GM
         try:
             UnitGM = UnitPrice - UnitCost
             ws_target.cell(r, 40, UnitGM)
         except:
             ws_target.cell(r, 40, "")
 
+        # 4 更新UnitGM%
         try:
             UnitGM_precent = UnitGM / UnitPrice * 100
             ws_target.cell(r, 41, UnitGM_precent)
         except:
             ws_target.cell(r, 41, "")
 
+        # 5 更新RC
         # RC #  ws_source_Application = “CONSTRUCTION” 为 587 其他都是 497
         if ws_source_Application == "CONSTRUCTION":
             ws_target.cell(r, 42, 587)
         else:
             ws_target.cell(r, 42, 497)
 
-        # Team 生成
+        # 6 更新 EA EBU
+        # 6.1 mapping EA EBU
         t = 2
         while t <= ws_template.max_row:
             ws_template_Category = str(ws_template.cell(t, 1).value).upper()
@@ -159,14 +165,16 @@ try:
 
             t += 1
 
-            #  隆工特殊处理 Category 属于 BHO/CQP/DFM/XCE  and Application == CONSTRUCTION and Family
-            #  隆工不需要维护
-            if "BHO/CQP/DFM/XCE".find(ws_source_MFGPlant) >= 0 \
-                    and ws_source_Application == "CONSTRUCTION" \
-                    and ws_source_EngineFamily == "B6.7" \
-                    and ws_source_FCGName == "LONKING SHANGHAI":
-                ws_target.cell(r, 37, "Domestic DCEC construction")
+        # 6.2 隆工特殊处理
+        #  隆工特殊处理 Category 属于 BHO/CQP/DFM/XCE  and Application == CONSTRUCTION and Family
+        #  隆工不需要维护
+        if "BHO/CQP/DFM/XCE".find(ws_source_MFGPlant) >= 0 \
+                and ws_source_Application == "CONSTRUCTION" \
+                and ws_source_EngineFamily == "B6.7" \
+                and ws_source_FCGName == "LONKING SHANGHAI":
+            ws_target.cell(r, 37, "Domestic DCEC construction")
 
+        # 7 更新汇率
         # 通过模板表ws_template_rate取出汇率,并更新PFR
         er = 2
         while er <= ws_template_rate.max_row:
@@ -175,14 +183,15 @@ try:
             if (ws_source_AcctgPeriod == tem_month):
                 ws_target.cell(r, 43, rate)
             er += 1
-        # 更新Sales 和 Purchase
-        # 1 获取PFR的 Acctg Period \ Engine Family \ Configuration \ FCG Name
+
+        # 8 更新 discount / Purchasing rebate
+        # 8.1 获取PFR的 Acctg Period \ Engine Family \ Configuration \ FCG Name
         PFR_Month = ws_source_AcctgPeriod[-2:]
         ws_source_Configuration = str(ws_source.cell(r, 10).value)
         PFR_Emission = ""
         PFR_Customer = ""
 
-        # 2 根据 TeamTemplate.xlsx 表获取 Configuration 对应的 PFR_Emission
+        # 8.2 根据 TeamTemplate.xlsx 表获取 Configuration 对应的 PFR_Emission
         tt = 2
         while tt <= ws_template_desa_emission.max_row:
             # 获取 模板表 Config 对应的 Emission
@@ -193,7 +202,7 @@ try:
                 PFR_Emission = ws_template_desa_emission_emission
             tt += 1
 
-        # 3 根据PFR模板表获取 和 FCG name 对应的 PFR_Customer
+        # 8.3 根据PFR模板表获取 和 FCG name 对应的 PFR_Customer
         fcg = 2
         while fcg <= ws_template_FCGName.max_row:
             # 模板表 FCG Name 对应的Customer
@@ -203,8 +212,9 @@ try:
                 PFR_Customer = ws_template_FCGName_Customer
             fcg += 1
 
-        # 4 根据月份对应Rebate的
+        # 8.4 更新 discount
         # 根据月份获取 discount
+
 
         sa = 2
         while sa <= ws_rebateAccount_sales.max_row:
@@ -241,7 +251,7 @@ try:
 
             sa += 1
 
-        # 更新Purchasing rabate
+        # 9 更新 Purchasing rebate
         p = 2
         while p <= ws_rebateAccount_purchase.max_row:
             rebate_purchase_Customer = str(ws_rebateAccount_purchase.cell(p, 1).value)
@@ -250,33 +260,35 @@ try:
             if (
                     PFR_Customer == rebate_purchase_Customer and PFR_EngineFamily == rebate_purchase_EngineFamily and PFR_Emission == rebate_purchase_Emission):
                 if (PFR_Month == "01"):
-                    ws_target.cell(r, 45, str(ws_rebateAccount_sales.cell(p, 6).value))
+                    ws_target.cell(r, 45, str(ws_rebateAccount_purchase.cell(p, 6).value))
                 if (PFR_Month == "02"):
-                    ws_target.cell(r, 45, str(ws_rebateAccount_sales.cell(p, 7).value))
+                    ws_target.cell(r, 45, str(ws_rebateAccount_purchase.cell(p, 7).value))
                 if (PFR_Month == "03"):
-                    ws_target.cell(r, 45, str(ws_rebateAccount_sales.cell(p, 8).value))
+                    ws_target.cell(r, 45, str(ws_rebateAccount_purchase.cell(p, 8).value))
                 if (PFR_Month == "04"):
-                    ws_target.cell(r, 45, str(ws_rebateAccount_sales.cell(p, 9).value))
+                    ws_target.cell(r, 45, str(ws_rebateAccount_purchase.cell(p, 9).value))
                 if (PFR_Month == "05"):
-                    ws_target.cell(r, 45, str(ws_rebateAccount_sales.cell(p, 10).value))
+                    ws_target.cell(r, 45, str(ws_rebateAccount_purchase.cell(p, 10).value))
                 if (PFR_Month == "06"):
-                    ws_target.cell(r, 45, str(ws_rebateAccount_sales.cell(p, 11).value))
+                    ws_target.cell(r, 45, str(ws_rebateAccount_purchase.cell(p, 11).value))
                 if (PFR_Month == "07"):
-                    ws_target.cell(r, 45, str(ws_rebateAccount_sales.cell(p, 12).value))
+                    ws_target.cell(r, 45, str(ws_rebateAccount_purchase.cell(p, 12).value))
                 if (PFR_Month == "08"):
-                    ws_target.cell(r, 45, str(ws_rebateAccount_sales.cell(p, 13).value))
+                    ws_target.cell(r, 45, str(ws_rebateAccount_purchase.cell(p, 13).value))
                 if (PFR_Month == "09"):
-                    ws_target.cell(r, 45, str(ws_rebateAccount_sales.cell(p, 14).value))
+                    ws_target.cell(r, 45, str(ws_rebateAccount_purchase.cell(p, 14).value))
                 if (PFR_Month == "10"):
-                    ws_target.cell(r, 45, str(ws_rebateAccount_sales.cell(p, 15).value))
+                    ws_target.cell(r, 45, str(ws_rebateAccount_purchase.cell(p, 15).value))
                 if (PFR_Month == "11"):
-                    ws_target.cell(r, 45, str(ws_rebateAccount_sales.cell(p, 16).value))
+                    ws_target.cell(r, 45, str(ws_rebateAccount_purchase.cell(p, 16).value))
                 if (PFR_Month == "12"):
-                    ws_target.cell(r, 45, str(ws_rebateAccount_sales.cell(p, 17).value))
+                    ws_target.cell(r, 45, str(ws_rebateAccount_purchase.cell(p, 17).value))
 
             p += 1
 
-        # 更新LOB 如果 EA-EBU 在列表里存在,则更新LOB
+
+
+        # 10 通过mapping方式更新lob
         ws_source_team = str(ws_source.cell(r, 37).value)
         if ws_source_team in dict_lob:
             ws_target.cell(r, 44, dict_lob[ws_source_team])
@@ -287,6 +299,7 @@ try:
 
     wb_target.save(PFR_target)
 
+    # 11 更新 Other Sales Adj. / Other GM Adj. / SAR ， 根据LOB汇总数据对 Units 进行分摊
     # 定义列表存储每个 LOB 每月 对应的 Units 累加
     dict_PFR_LOB_Month_Units = {}
     dict_PFR_LOB_Month_Units_key = ()
@@ -303,10 +316,11 @@ try:
     target_units = ws_target['U':'U']
     target_units_list = [str(e.value) for e in target_units]
 
-    list_target_lob_month_units = list(zip(target_lob_list, target_month_list, target_units_list))
-    # list(LOB,Month) 作为key
+    # list_target_lob_month_units = list(zip(target_lob_list, target_month_list, target_units_list))
+    # 定义字典 dict_target_lob_month_units 以 list(LOB,Month)作为Key，以Units作为Value
     dict_target_lob_month_units = dict(zip(zip(target_lob_list, target_month_list), target_units_list))
 
+    # 遍历字典赋值为0
     for key in dict_target_lob_month_units:
         dict_target_lob_month_units[key] = 0
 
@@ -314,7 +328,7 @@ try:
     # print(dict_target_lob_month_units)
 
     dict_tr = {}
-    # 遍历求得 每个 LOB 在各个月份的 汇总值 ， 如 LCV 1月份 汇总 2月份汇总。。。
+    # 12.1 遍历求得 每个 LOB 在各个月份的 汇总值 ， 如 LCV 1月份 汇总 2月份汇总。。。
     tr = 2
     while tr <= ws_target.max_row:
         # 获取LOB
@@ -326,16 +340,17 @@ try:
 
         dict_tr = {(tr_lob, tr_month): tr_units}
         # dict_target_lob_month_units  units 的总和
+        # 判断是否存在 LOB-Month 为键，如果存在则累加
         if (tr_lob, tr_month) in dict_target_lob_month_units:
             dict_target_lob_month_units[(tr_lob, tr_month)] = dict_target_lob_month_units[(tr_lob, tr_month)] + int(
                 tr_units)
 
         tr += 1
 
-    print("-------dict_target_lob_month_units-------")
-    print(dict_target_lob_month_units)
+    # print("-------dict_target_lob_month_units-------")
+    # print(dict_target_lob_month_units)
 
-    # 从模板表取出 Other Sales Adj
+    # 12.2 从模板表取出 Other Sales Adj
     osa = 2
     dict_osa_jan = {}
     dict_osa_feb = {}
@@ -364,6 +379,7 @@ try:
         osa_sales_nov = str(ws_template_Other_Sales_Adj.cell(osa, 12).value)
         osa_sales_dec = str(ws_template_Other_Sales_Adj.cell(osa, 13).value)
 
+        # 拼出Key
         dict_osa_jan[(osa_lob, "01")] = osa_sales_jan
         dict_osa_feb[(osa_lob, "02")] = osa_sales_feb
         dict_osa_mar[(osa_lob, "03")] = osa_sales_mar
@@ -383,7 +399,7 @@ try:
 
         osa += 1
 
-    # 从模板表取出 Other GM Adj
+    # 12.3 从模板表取出 Other GM Adj
     oga = 2
     dict_oga_jan = {}
     dict_oga_feb = {}
@@ -431,7 +447,7 @@ try:
 
         oga += 1
 
-    # 从模板表取出 SAR adjust
+    # 12.4 从模板表取出 SAR adjust
     sar = 2
     dict_sar_jan = {}
     dict_sar_feb = {}
@@ -480,12 +496,12 @@ try:
         sar += 1
 
 
-    print("-------dict_osa-------")
-    print(dict_osa)
-    print(dict_oga)
-    print(dict_sar)
+    # print("-------dict_osa-------")
+    # print(dict_osa)
+    # print(dict_oga)
+    # print(dict_sar)
 
-    # 逐行分摊 Other Sales Adj.
+    # 12.5 逐行分摊 Other Sales Adj. / Other GM Adj. / SAR
     osa_w = 2
     while osa_w <= ws_target.max_row:
         # 获取LOB
