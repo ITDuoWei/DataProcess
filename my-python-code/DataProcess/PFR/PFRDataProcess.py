@@ -31,7 +31,13 @@ try:
 
     # 目标表
     wb_target = openpyxl.Workbook()
-    ws_target = wb_target.worksheets[0]
+    wb_target.remove(wb_target.worksheets[0])
+    # version2 删减版
+    wb_target.create_sheet("reduce version", 0)
+    # version1 完整版
+    wb_target.create_sheet("full version", 1)
+    ws_target = wb_target.worksheets[1]
+    ws_target_reduceversion = wb_target.worksheets[0]
 
     ls_table_source = list(ws_source.values)
     ls_table_values_source = [t for t in ls_table_source]
@@ -77,6 +83,20 @@ try:
 
     dict_lob_turn = {v: k for k, v in dict_lob.items()}
     # print(dict_lob_turn)
+
+    # 写表头 EA EBU\Unit Price\Unit Cost\Unit GM\Unit GM%\RC\Exchange Rate\LOB\Purchasing rebate\Other Sales Adj.\Other GM Adj.\SAR
+    ws_target.cell(1, 37, "EA EBU")
+    ws_target.cell(1, 38, "Unit Price")
+    ws_target.cell(1, 39, "Unit Cost")
+    ws_target.cell(1, 40, "Unit GM")
+    ws_target.cell(1, 41, "Unit GM%")
+    ws_target.cell(1, 42, "RC")
+    ws_target.cell(1, 43, "Exchange Rate")
+    ws_target.cell(1, 44, "LOB")
+    ws_target.cell(1, 45, "Purchasing rebate")
+    ws_target.cell(1, 46, "Other Sales Adj.")
+    ws_target.cell(1, 47, "Other GM Adj.")
+    ws_target.cell(1, 48, "SAR")
 
     r = 2
     while r <= ws_target.max_row:
@@ -215,7 +235,6 @@ try:
         # 8.4 更新 discount
         # 根据月份获取 discount
 
-
         sa = 2
         while sa <= ws_rebateAccount_sales.max_row:
             # 获取 rebate表的 Customer 、 Engine Family 、 Emission
@@ -285,8 +304,6 @@ try:
                     ws_target.cell(r, 45, str(ws_rebateAccount_purchase.cell(p, 17).value))
 
             p += 1
-
-
 
         # 10 通过mapping方式更新lob
         ws_source_team = str(ws_source.cell(r, 37).value)
@@ -495,7 +512,6 @@ try:
 
         sar += 1
 
-
     # print("-------dict_osa-------")
     # print(dict_osa)
     # print(dict_oga)
@@ -513,10 +529,12 @@ try:
 
         dict_tr = {(w_lob, w_month): w_units}
         if (w_lob, w_month) in dict_target_lob_month_units:
-            if ( dict_tr[(w_lob, w_month)] == 'None' or dict_target_lob_month_units[(w_lob, w_month)] == 'None' or dict_osa[(w_lob, w_month)] == 'None' ):
-                w_osa =0
+            if (dict_tr[(w_lob, w_month)] == 'None' or dict_target_lob_month_units[(w_lob, w_month)] == 'None' or
+                    dict_osa[(w_lob, w_month)] == 'None'):
+                w_osa = 0
             else:
-                w_osa = int(dict_tr[(w_lob, w_month)]) / int(dict_target_lob_month_units[(w_lob, w_month)]) * int(dict_osa[(w_lob, w_month)])
+                w_osa = int(dict_tr[(w_lob, w_month)]) / int(dict_target_lob_month_units[(w_lob, w_month)]) * int(
+                    dict_osa[(w_lob, w_month)])
             ws_target.cell(osa_w, 46, w_osa)
 
         if (w_lob, w_month) in dict_target_lob_month_units:
@@ -538,6 +556,49 @@ try:
             ws_target.cell(osa_w, 48, w_sar)
 
         osa_w += 1
+
+    wb_target.save(PFR_target)
+
+    print("Now,generating reduced Report")
+
+    # 从full version 批量写入 reduce version
+    f = 1
+    while f <= ws_target.max_row:
+        ws_target_reduceversion.cell(f, 1, ws_target.cell(f, 2).value)
+        ws_target_reduceversion.cell(f, 2, ws_target.cell(f, 3).value)
+        ws_target_reduceversion.cell(f, 3, ws_target.cell(f, 4).value)
+        ws_target_reduceversion.cell(f, 4, ws_target.cell(f, 5).value)
+        ws_target_reduceversion.cell(f, 5, ws_target.cell(f, 7).value)
+        ws_target_reduceversion.cell(f, 6, ws_target.cell(f, 9).value)
+        ws_target_reduceversion.cell(f, 7, ws_target.cell(f, 10).value)
+        ws_target_reduceversion.cell(f, 8, ws_target.cell(f, 11).value)
+        ws_target_reduceversion.cell(f, 9, ws_target.cell(f, 15).value)
+        ws_target_reduceversion.cell(f, 10, ws_target.cell(f, 16).value)
+        ws_target_reduceversion.cell(f, 11, ws_target.cell(f, 21).value)
+        ws_target_reduceversion.cell(f, 12, ws_target.cell(f, 22).value)
+        ws_target_reduceversion.cell(f, 13, ws_target.cell(f, 23).value)
+        ws_target_reduceversion.cell(f, 14, ws_target.cell(f, 24).value)
+        ws_target_reduceversion.cell(f, 15, ws_target.cell(f, 25).value)
+        ws_target_reduceversion.cell(f, 16, ws_target.cell(f, 28).value)
+        ws_target_reduceversion.cell(f, 17, ws_target.cell(f, 29).value)
+        ws_target_reduceversion.cell(f, 18, ws_target.cell(f, 30).value)
+        ws_target_reduceversion.cell(f, 19, ws_target.cell(f, 31).value)
+        ws_target_reduceversion.cell(f, 20, ws_target.cell(f, 32).value)
+        ws_target_reduceversion.cell(f, 21, ws_target.cell(f, 33).value)
+        ws_target_reduceversion.cell(f, 22, ws_target.cell(f, 37).value)
+        ws_target_reduceversion.cell(f, 23, ws_target.cell(f, 38).value)
+        ws_target_reduceversion.cell(f, 24, ws_target.cell(f, 39).value)
+        ws_target_reduceversion.cell(f, 25, ws_target.cell(f, 40).value)
+        ws_target_reduceversion.cell(f, 26, ws_target.cell(f, 41).value)
+        ws_target_reduceversion.cell(f, 27, ws_target.cell(f, 42).value)
+        ws_target_reduceversion.cell(f, 28, ws_target.cell(f, 43).value)
+        ws_target_reduceversion.cell(f, 29, ws_target.cell(f, 44).value)
+        ws_target_reduceversion.cell(f, 30, ws_target.cell(f, 45).value)
+        ws_target_reduceversion.cell(f, 31, ws_target.cell(f, 46).value)
+        ws_target_reduceversion.cell(f, 32, ws_target.cell(f, 47).value)
+        ws_target_reduceversion.cell(f, 33, ws_target.cell(f, 48).value)
+
+        f += 1
 
     wb_target.save(PFR_target)
 

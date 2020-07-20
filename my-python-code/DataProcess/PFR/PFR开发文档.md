@@ -375,3 +375,51 @@ while osa_w <= ws_target.max_row:
 前提：需维护《11.PFR-SAR Adj.》mapping表
 
 逻辑：同11生成Other Sales Adj.列
+
+
+
+## 14 生成缩减版报告
+
+**需求：**PFR的数据源不变，需要生成的结果表上删减掉以下十五列
+
+A列 ID
+
+F列  Engine Family Code
+
+H列 Engine Application Code
+
+E列  ABO Name
+
+M列 ABO Group Name
+
+N列 WPT Name
+
+O列 Trans FCG
+
+Q列 Trans FCG Name
+
+R列 Forecaster Id
+
+S列 Forecaster Name
+
+T列 Grs Op Cont
+
+Z列 % Op Cont
+
+AA列 Version
+
+AH列 Scenario
+
+AI列 Tlva Indic
+
+**结果：**
+
+程序为“PFRTarget.xlsx”生成两个sheet表
+
+1. reduce version : 为删减后的结果表
+
+2. full version :为完整版的结果表
+
+**实现:**
+
+以生成full version为基础，生成reduce version，并把不需要删除的列逐行写入到reduce version。
